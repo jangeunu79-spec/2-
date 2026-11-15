@@ -13,15 +13,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Package Swift App into IPA
+    - name: Compile Swift File to iOS Executable
       run: |
         mkdir -p Payload/ServerApp.app
         
-        # .swift 파일을 앱 실행 바이너리로 복사 후 권한 부여
+        # 저장소의 .swift 파일을 찾아내어 iOS(arm64)용 바이트코드로 정식 컴파일
         SWIFT_FILE=$(ls *.swift | head -n 1)
-        echo "Found swift file: $SWIFT_FILE"
-        cp "$SWIFT_FILE" Payload/ServerApp.app/ServerApp
-        chmod +x Payload/ServerApp.app/ServerApp
+        echo "Compiling $SWIFT_FILE for iOS..."
+        
+        swiftc -target arm64-apple-ios15.0 -sdk $(xcrun --sdk iphoneos --show-sdk-path) -o Payload/ServerApp.app/ServerApp "$SWIFT_FILE"
         
         # Info.plist 생성
         cat << 'EOF' > Payload/ServerApp.app/Info.plist
