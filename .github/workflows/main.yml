@@ -1,4 +1,4 @@
-name: Build Unsigned IPA
+name: Build Real iOS IPA
 
 on:
   push:
@@ -13,16 +13,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Package Swift File into IPA
+    - name: Compile for iOS (arm64)
       run: |
+        # iOS 기기용 SDK 경로 확인 및 실제 컴파일
+        SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+        swift build -c release --triple arm64-apple-ios15.0 -Xswiftc -sdk -Xswiftc "$SDK_PATH" -Xcc -isysroot -Xcc "$SDK_PATH"
+        
+        # 앱 번들 생성 및 컴파일된 진짜 바이너리 복사
         mkdir -p Payload/ServerApp.app
+        cp .build/arm64-apple-ios15.0/release/ServerApp Payload/ServerApp.app/ServerApp
         
-        # 저장소에 있는 .swift 파일을 찾아 앱 실행 파일로 복사
-        SWIFT_FILE=$(ls *.swift | head -n 1)
-        echo "Found swift file: $SWIFT_FILE"
-        cp "$SWIFT_FILE" Payload/ServerApp.app/ServerApp
-        
-        # Info.plist 작성
         cat << 'EOF' > Payload/ServerApp.app/Info.plist
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -32,14 +32,20 @@ jobs:
             <string>com.example.serverapp</string>
             <key>CFBundleName</key>
             <string>ServerApp</string>
+            <key>CFBundleExecutable</key>
+            <string>ServerApp</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
             <key>CFBundleVersion</key>
             <string>1.0</string>
             <key>CFBundleShortVersionString</key>
             <string>1.0</string>
-            <key>CFBundleExecutable</key>
-            <string>ServerApp</string>
             <key>MinimumOSVersion</key>
-            <string>14.0</string>
+            <string>15.0</string>
+            <key>UIDeviceFamily</key>
+            <array>
+                <integer>1</integer>
+            </array>
         </dict>
         </plist>
         EOF
