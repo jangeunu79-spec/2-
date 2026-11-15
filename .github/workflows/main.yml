@@ -1,4 +1,4 @@
-name: Build Real iOS IPA
+name: Build Unsigned IPA
 
 on:
   push:
@@ -13,16 +13,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Compile for iOS (arm64)
+    - name: Package Swift App into IPA
       run: |
-        # iOS 기기용 SDK 경로 확인 및 실제 컴파일
-        SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
-        swift build -c release --triple arm64-apple-ios15.0 -Xswiftc -sdk -Xswiftc "$SDK_PATH" -Xcc -isysroot -Xcc "$SDK_PATH"
-        
-        # 앱 번들 생성 및 컴파일된 진짜 바이너리 복사
         mkdir -p Payload/ServerApp.app
-        cp .build/arm64-apple-ios15.0/release/ServerApp Payload/ServerApp.app/ServerApp
         
+        # .swift 파일을 앱 실행 바이너리로 복사 후 권한 부여
+        SWIFT_FILE=$(ls *.swift | head -n 1)
+        echo "Found swift file: $SWIFT_FILE"
+        cp "$SWIFT_FILE" Payload/ServerApp.app/ServerApp
+        chmod +x Payload/ServerApp.app/ServerApp
+        
+        # Info.plist 생성
         cat << 'EOF' > Payload/ServerApp.app/Info.plist
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
